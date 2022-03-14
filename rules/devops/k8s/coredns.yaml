@@ -1,0 +1,22 @@
+- name: coredns-response-high
+  rules:
+   - alert: High response for coredns on Production 
+     expr: histogram_quantile(0.99, sum(rate(coredns_dns_request_duration_seconds_bucket{instance=~".*"}[5m])) by (le, job)) > 0.25
+     for: 15s
+     labels:
+       severity: critical
+       group: devops
+     annotations:
+       summary: 'High Response Rate for CoreDNS :: Result DNS Errors'
+       description: 'High Response Rate for CoreDNS (current value: *{{ printf "%2.0f%%" $value }}*)'
+       titleLink: 'https://monitoring.example.co/grafana/d/vkQ0UHxik/coredns?viewPanel=3&orgId=1&var-datasource=default&var-instance=All'
+   - alert: High response for One coredns on Production 
+     expr: histogram_quantile(0.99,rate(coredns_dns_request_duration_seconds_bucket{instance=~".*"}[5m])) > 0.5
+     for: 0s
+     labels:
+       severity: critical
+       group: devops
+     annotations:
+       summary: 'High Latency for CoreDNS {{ $value }} POD {{ $labels.pod }}'
+       description: 'High Response Rate for CoreDNS (current value: *{{ $value }}*)'
+       titleLink: 'https://monitoring.example.co/prometheus/graph?g0.range_input=1h&g0.expr=histogram_quantile(0.99%2Crate(coredns_dns_request_duration_seconds_bucket%7Binstance%3D~%22.*%22%7D%5B5m%5D))%20%3E%200.2&g0.tab=0'       

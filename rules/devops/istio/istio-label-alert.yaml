@@ -1,0 +1,12 @@
+- name: istio-label-wrong-critical
+  rules:
+   - alert: Istio Injection Label Incorrect Critical
+     expr: count(kube_namespace_labels{label_istio_injection="enabled",namespace=~"kube-system|istio-system|istio-ingressgateway.*|monitoring|datadog|istio.*|kube.*", namespace!="kube-public"}) by (namespace) > 1
+     for: 15s
+     labels:
+       severity: critical
+       group: devops
+     annotations:
+       summary: 'Wrong  Istio Injection Label Provided Downtime Expected'
+       description: 'Production: High example-API-Java Latency (current value: *{{ printf "%2.0f%%" $value }}*)'
+       titleLink: 'https://monitoring.example.co/grafana/'

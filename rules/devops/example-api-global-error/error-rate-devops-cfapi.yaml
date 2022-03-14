@@ -1,0 +1,13 @@
+
+- name: Error Rate High General[5XX] 
+  rules:
+   - alert: High Error Rate In Production
+     expr: sum(increase(PRODUCTION_request_status_code{service="example-api-internal", status_code=~"5.*",hostname=~".*"}[1m])) > 90
+     for: 120s
+     labels:
+       severity: critical
+       group: devops
+     annotations:
+       summary: "High 5XX Error Rate: Value {{ $value }}"
+       description: "Error Rate High in production systems"
+       titleLink: "https://monitoring.example.co/grafana/d/o5CvUMCZz/example-api?orgId=1&refresh=10s&from=now-3h&to=now&fullscreen&panelId=24"

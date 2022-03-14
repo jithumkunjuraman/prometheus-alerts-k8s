@@ -1,0 +1,50 @@
+- name: devops-alertmanager-rules
+  rules:
+  - alert: AlertmanagerConfigInconsistent
+    annotations:
+      summary: The configuration of the instances of the Alertmanager cluster `{{$labels.service}}` are out of sync.
+    expr: count_values("config_hash", alertmanager_config_hash{job="prometheus-operator-alertmanager",namespace="monitoring"}) BY (service) / ON(service) GROUP_LEFT() label_replace(max(prometheus_operator_spec_replicas{job="prometheus-operator-operator",namespace="monitoring",controller="alertmanager"}) by (name, job, namespace, controller), "service", "$1", "name", "(.*)") != 1
+    for: 15m
+    labels:
+      severity: critical
+      group: devops
+  - alert: AlertmanagerFailedReload
+    annotations:
+      summary: Reloading Alertmanager's configuration has failed for {{ $labels.namespace }}/{{ $labels.pod}}.
+    expr: alertmanager_config_last_reload_successful{job="prometheus-operator-alertmanager",namespace="monitoring"} == 0
+    for: 10m
+    labels:
+      severity: warning
+      group: devops
+  - alert: AlertmanagerMembersInconsistent
+    annotations:
+      summary: Alertmanager has not found all other members of the cluster.
+    expr: alertmanager_cluster_members{job="prometheus-operator-alertmanager",namespace="monitoring"} != on (service) GROUP_LEFT() count by (service) (alertmanager_cluster_members{job="prometheus-operator-alertmanager",namespace="monitoring"})
+    for: 5m
+    labels:
+      severity: critical
+      group: devops
+  - alert: TargetDown
+    annotations:
+      summary: '{{ printf "%.4g" $value }}% of the {{ $labels.job }} targets in {{ $labels.namespace }} namespace are down.'
+    expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up) BY (job, namespace, service)) > 10
+    for: 10m
+    labels:
+      severity: warning
+  - alert: Watchdog
+    annotations:
+      summary: |
+        This is an alert meant to ensure that the entire alerting pipeline is functional.
+        This alert is always firing, therefore it should always be firing in Alertmanager
+        and always fire against a DevOps receiver.
+    expr: vector(1)
+    labels:
+      severity: none
+  - alert: PrometheusTargetDown
+    annotations:
+      summary: '{{ printf "%.4g" $value }}% of the {{ $labels.job }} targets in {{ $labels.namespace }} namespace are down.'
+    expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up{namespace!~"kube-system",job!~"victoriametrics-prod"}) BY (job, namespace, service)) > 90
+    for: 10m
+    labels:
+      severity: critical
+      group: devops    

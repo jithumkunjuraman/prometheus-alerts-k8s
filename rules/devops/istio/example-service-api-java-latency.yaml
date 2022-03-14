@@ -1,0 +1,13 @@
+- name: example-api-java-latency-high
+  rules:
+   - alert: High Latency on example-api-java 
+     expr: (histogram_quantile(0.90, sum(irate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_workload=~"example-api-v2", destination_workload_namespace=~"example-api-v2"}[1m])) by (le, pod))) > 1000
+     for: 30s
+     labels:
+       severity: critical
+       group: cf-api
+     annotations:
+       summary: 'High Latency on example-api-java'
+       description: 'Production: High example-API-Java Latency (current value: *{{ printf "%2.0f%%" $value }}*)'
+       titleLink: 'https://monitoring.example.co/grafana/d/UbsSZTDik/istio-workload-dashboard?orgId=1&refresh=10s&var-namespace=example-api-v2&var-workload=example-api-v2&var-srcns=All&var-srcwl=All&var-dstsvc=All&fullscreen&panelId=92'
+

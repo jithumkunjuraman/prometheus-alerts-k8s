@@ -1,0 +1,12 @@
+- name: istio-incoming-error-high
+  rules:
+   - alert: High Incoming Error Rate
+     expr: sum(irate(istio_requests_total{reporter="destination",destination_workload=~".*",destination_workload!="bifrost",destination_workload!="ramsay",response_code!~"5.*"}[5m])) by (destination_workload_namespace) / sum(irate(istio_requests_total{reporter="destination",destination_workload=~".*"}[5m])) by (destination_workload_namespace)  < 0.95
+     for: 3m
+     labels:
+       severity: critical
+       group: devops
+     annotations:
+       summary: "High Incoming Error Rate {{ $labels.destination_workload_namespace }}"
+       description: "Production: 5XX High"
+       titleLink: "https://monitoring.example.co/grafana/d/UbsSZTDik/istio-workload-dashboard?orgId=1&refresh=10s"

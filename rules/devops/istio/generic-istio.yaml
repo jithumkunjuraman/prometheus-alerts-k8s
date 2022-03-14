@@ -1,0 +1,67 @@
+- name: istio-apps-devops
+  rules:
+  - alert: IstioGatewayAvailabilityDrop
+    annotations:
+      summary: 'Istio Gateway Availability Drop'
+      description: 'Gateway pods have dropped during the last 5m (current value: *{{ printf "%2.0f%%" $value }}*). Inbound traffic will likely be affected'
+    expr: >
+      min(kube_deployment_status_replicas_available{deployment=~"istio-ingressgateway.*",namespace!="istio-ingressgateway-vpn",namespace=~".*"}) without (instance, pod) < 2
+    for: 5m
+    labels:
+      severity: critical
+      group: devops
+      
+  - alert: IstioGlobalRequestRateHigh
+    annotations:
+      summary: 'Istio Global Request Rate High'
+      description: 'Istio global request rate is unusually high during the last 5m (current value: *{{ printf "%2.0f%%" $value }}*). The amount of traffic being generated inside the service mesh is higher than normal'
+    expr: >
+      round(sum(irate(istio_requests_total{reporter="destination"}[5m])), 0.001) > 8000
+    for: 5m
+    labels:
+      severity: warning
+
+  - alert: JanusIstioGlobalRequestRateHigh
+    annotations:
+      summary: 'Istio Global Request Rate High for Janus'
+      description: 'Istio global request rate is unusually high during the last 5m (current value: *{{ printf "%2.0f%" $value }}*). The amount of traffic being generated inside the service mesh is higher than normal'
+      titleLink: https://monitoring.example.co/grafana/d/UbsSZTDik/istio-workload-dashboard?viewPanel=25&orgId=1&refresh=60s&var-namespace=janus&var-workload=janus&var-srcns=All&var-srcwl=All&var-dstsvc=All&from=now-1h&to=now
+    expr: >
+      round(sum(rate(istio_requests_total{reporter="destination",source_workload="janus"}[1m])), 0.001) > 200
+    for: 30s
+    labels:
+      severity: critical
+      group: devops
+
+  - alert: IstioGlobalRequestRateLow
+    annotations:
+      summary: 'Istio global request rate too low'
+      description: 'Istio global request rate is unusually low during the last 5m (current value: *{{ printf "%2.0f%%" $value }}*). The amount of traffic being generated inside the service mesh has dropped below usual levels'
+    expr: >
+      round(sum(irate(istio_requests_total{reporter="destination"}[5m])), 0.001) < 100
+    for: 5m
+    labels:
+      severity: critical
+      group: devops
+
+  - alert: IstioGlobalHTTP5xxRateHigh
+    annotations:
+      summary: 'Istio Percentage of HTTP 5xx responses is too high'
+      description: 'Istio global HTTP 5xx rate is too high in last 5m (current value: *{{ printf "%2.0f%%" $value }}*). The HTTP 5xx errors within the service mesh is unusually high'
+    expr: >
+       sum(irate(istio_requests_total{reporter="destination", response_code=~"5.*"}[5m])) / sum(irate(istio_requests_total{reporter="destination"}[5m])) > 0.01
+    for: 5m
+    labels:
+      severity: critical
+      group: devops
+
+  - alert: IstioGatewayOutgoingSuccessLow
+    annotations:
+      summary: 'Istio Gateway outgoing success rate is too low'
+      description: 'Istio Gateway success to outbound destinations is too low in last 5m (current value: *{{ printf "%2.0f%%" $value }}*). Inbound traffic may be affected'
+    expr: >
+      sum(irate(istio_requests_total{reporter="source", source_workload=~"istio-ingressgateway.*",source_workload_namespace="istio-system", connection_security_policy!="mutual_tls",response_code!~"5.*"}[5m])) /  sum(irate(istio_requests_total{reporter="source", source_workload=~"istio-ingressgateway.*",source_workload_namespace="istio-system", connection_security_policy!="mutual_tls"}[5m])) < 0.995
+    for: 5m
+    labels:
+      severity: critical
+      group: devops

@@ -1,0 +1,20 @@
+{{- $root := .Files }}
+{{- range $path, $bytes := $root.Glob "rules/*/**.yaml" }}
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: "monitoring.coreos.com/v1"
+    kind: PrometheusRule
+    metadata:
+      name: prometheus-rules-{{ $path | base | trimSuffix ".yaml" }}
+      labels:
+        app: kube-prometheus-stack
+        app.kubernetes.io/managed-by: spinnaker
+        app.kubernetes.io/name: cluster-setup
+        chart: kube-prometheus-stack-1.0.0
+        release: prometheus-operator
+    spec:
+      groups:
+{{ $root.Get $path | indent 8 }}
+---
+{{- end }}
